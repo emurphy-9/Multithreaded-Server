@@ -10,10 +10,14 @@ def stopWorker():
 def handleClient(connection, address):
     print 'Connected by ', address
     data = connection.recv(1024)
-    x = math.sqrt(int(data))
-    print "Square root of: ", data, "is: ", x
-    connection.sendall(str(x))    
-    return False   
+    if(data == "KILL_SERVICE\n") :
+        return False
+    elif(str.startswith(data,"HELO ") and str.endswith(data,"\n")):
+        connection.sendall(data + "IP:")    
+    else:
+        #do nothing
+        1+1
+    return True   
 
 class Worker(Thread):
     def __init__(self, queue):
@@ -54,7 +58,7 @@ if(len(sys.argv) != 2) :
 else :    
     try: 
         port = int(sys.argv[1])
-        print "IP address: ", socket.gethostbyname(socket.gethostname()) 
+        print "IP address: ", socket.gethostbyname(socket.getfqdn()) 
         NUM_THREADS = 5
         HOST = ''                 # Symbolic name meaning all available interfaces
         pool = ThreadPool(NUM_THREADS)
