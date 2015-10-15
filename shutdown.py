@@ -7,9 +7,9 @@ else :
     host = 'localhost'
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((host,port))
-    s.settimeout(1.0)
+    s.settimeout(100.0)
     print("Connection established!")
-    s.sendall("A bunch of giberish\n")
+    s.sendall("KILL_SERVICE\n")
     data = s.recv(1024)
     print 'Received ',data
     s.close() #Close socket
