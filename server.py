@@ -4,9 +4,12 @@ from Queue import Queue
 
 online = True
 shutdownLock = Lock()#Lock for online, used to shutdown server
+MAIN_SOCKET_TIMEOUT = 0.1#Timeout for the main server socket
+TIMEOUT_T = 0.001#Timeout every millisecond 
 IP_Address = socket.gethostbyname(socket.getfqdn())
 port = 9000 #Default port
 ID = "df7806c8c916f5e364762e23627f39fcebedca1221d080d0f8b96b0680e20bd2"
+DEBUG = False
 NUM_THREADS = 20 #Default Worker Threads
 MAX_DATA_LENGTH = 1024
 QUEUE_SIZE = NUM_THREADS*3 #Default size for queue, based on number of threads
@@ -38,18 +41,30 @@ def readOnline():
 
 #Function to handle connections to server
 def handleClient(connection, address):
-    global port, ID, IP_Address, MAX_DATA_LENGTH
+    global port, ID, IP_Address, MAX_DATA_LENGTH, DEBUG, TIMEOUT_T
     print 'Connected by ', address
-    data = connection.recv(MAX_DATA_LENGTH)#Get data
+    openConnection = True
     keepRunning = True
-    if(data == "KILL_SERVICE\n") :
-        setOnline(False)#Turn server off
-        keepRunning = False#Return false to stop this thread
-    elif(str.startswith(data,"HELO ") and str.endswith(data,"\n")):#Return requested info to client
-        connection.sendall(data + "IP:" + IP_Address+"\nPort:"+str(port)+"\nStudentID:"+ID+"\n")    
-    else:
-        #do nothing
-        1+1
+    connection.settimeout(TIMEOUT_T)#Timeout after some seconds
+    while (openConnection and readOnline()):
+        try: 
+            data = connection.recv(MAX_DATA_LENGTH)#Get data
+            if(not data) :
+                openConnection = False #This job is finished, no more data
+            else:
+                if(DEBUG) : print "Message contents:\n", data, "\n"
+                if(data == "KILL_SERVICE\n") : #Kill the server
+                    setOnline(False)#Turn server off
+                    keepRunning = False#Return false to stop this thread
+                    openConnection = False #Job finished
+#                    connection.sendall("Shutting down server...\n")
+                elif(str.startswith(data,"HELO ") and str.endswith(data,"\n")):#Return requested info to client
+                    connection.sendall(data + "IP:" + IP_Address+"\nPort:"+str(port)+"\nStudentID:"+ID+"\n")    
+                else: 
+                    #do nothing
+                    1+1
+        except socket.timeout:
+            continue    #Keep listening for more data
     return keepRunning
 
 class Worker(Thread):
@@ -81,17 +96,17 @@ class ThreadPool: #Thread pool class
             self.threads[i].join()#Join all the threads            
 #        self.queue.join()
 
-
-
 if(len(sys.argv) < 2) : #Get port number from command line
     print "Please enter a decimal number for the port e.g. server.py 5555"
 else :    
     try: 
         port = int(sys.argv[1])
         if(len(sys.argv) > 2 ):
-            NUM_THREADS = int(sys.argv[2])
+            DEBUG = int(sys.argv[2]) > 0
             if(len(sys.argv) > 3):
-                QUEUE_SIZE = int(sys.argv[3])            
+                NUM_THREADS = int(sys.argv[3])
+                if(len(sys.argv) > 4):
+                    QUEUE_SIZE = int(sys.argv[4])            
         HOST = '' #Start on localhost
         pool = ThreadPool(NUM_THREADS, QUEUE_SIZE)   #Create Thread pool with queue size stated
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -100,7 +115,7 @@ else :
             s.listen(1)#Start listening
             list = [s] #List of sockets
             while readOnline():
-                read, _, _ = select.select(list, [], [], 0.1)#Set timeout to 0.1 for non-blocking socket
+                read, _, _ = select.select(list, [], [], MAIN_SOCKET_TIMEOUT)#Set timeout for non-blocking socket
                 for sock in read:
                     if(sock is s):#Server socket 
                         c, a = sock.accept()#Get info and pass to thread pool
