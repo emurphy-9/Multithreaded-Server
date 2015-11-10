@@ -12,6 +12,4 @@ else :
     s.sendall("KILL_SERVICE\n")
     data = s.recv(1024)
     print 'Received ',data
-    while 1: 
-        s.sendall("Crap\n")
     s.close() #Close socket

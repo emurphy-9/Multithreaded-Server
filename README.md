@@ -5,7 +5,6 @@ Lab2
 Name: Eoin Murphy
 Student ID: df7806c8c916f5e364762e23627f39fcebedca1221d080d0f8b96b0680e20bd2
 
-<<<<<<< HEAD
 Solution written in Python, Thread Pooling implemented in server not taken from a library.
 
 The sever takes in a number of command line arguments, the port number is mandatory all others are optional
@@ -19,6 +18,3 @@ Debug determines if debug information is printed out (currently just message con
 Number of Threads determines the number of threads in the thread pool
 
 Size of queue determines the size of the queue for the thread pool, it sets how many tasks can be in the queue. This effectively caps the number of socket connections that can be kept on hold, all others will be ignored.
-=======
-Solution written in Python, Thread Pooling implemented in server (not taken from a library).
->>>>>>> origin/master

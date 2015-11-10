@@ -7,9 +7,10 @@ else :
     host = 'localhost'
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((host,port))
+    s.settimeout(1.0)
+    
     print("Connection established!")
-    for i in range(0,10) :
-        s.sendall("HELO I AM A BOT LOL :-) %d\n" % (i) )
-        data = s.recv(1024)
-        print 'Received ',data
+    s.sendall("HELO I AM A BT LOL :-)\n")
+    data = s.recv(1024)
+    print 'Received ',data
     s.close() #Close socket
